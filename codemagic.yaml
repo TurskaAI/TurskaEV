@@ -4,23 +4,38 @@ workflows:
     environment:
       xcode: latest
     scripts:
-      - name: Install dependencies
-        script: |
-          pod install || true
-      - name: Build IPA
+      - name: Build archive
         script: |
           xcodebuild \
-            -workspace "TurskaEV.xcworkspace" \
+            -project "TurskaEV.xcodeproj" \
             -scheme "TurskaEV" \
             -sdk iphoneos \
             -configuration Release \
             -archivePath $CM_BUILD_DIR/TurskaEV.xcarchive \
             archive
 
+      - name: Export IPA
+        script: |
+          cat <<EOF > exportOptions.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+
           xcodebuild \
             -exportArchive \
             -archivePath $CM_BUILD_DIR/TurskaEV.xcarchive \
             -exportOptionsPlist exportOptions.plist \
             -exportPath $CM_BUILD_DIR
+
     artifacts:
       - "*.ipa"
